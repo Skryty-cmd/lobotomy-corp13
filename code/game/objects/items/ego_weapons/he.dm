@@ -944,3 +944,53 @@
 		L.apply_damage(aoe, BLACK_DAMAGE, null, L.run_armor_check(null, BLACK_DAMAGE), spread_damage = TRUE)
 		var/obj/effect/temp_visual/small_smoke/halfsecond/FX =  new(get_turf(L))
 		FX.color = "#b52e19"
+
+//alleyway watchdoggo
+
+/obj/item/ego_weapon/telepole
+	name = "telepole"
+	desc = "To obey 'impulses' from beyond oneself... is just the course of all life, in the end."
+	special = "This weapon can be used to perform a jump attack after a short wind-up."
+	icon_state = "telepole_bat"
+	force = 30
+	damtype = RED_DAMAGE
+	armortype = RED_DAMAGE
+	attack_verb_continuous = list("slams", "attacks")
+	attack_verb_simple = list("slam", "attack")
+	hitsound = 'sound/abnormalities/icthys/hammer1.ogg'
+	attribute_requirements = list(FORTITUDE_ATTRIBUTE = 40)
+	var/release_message = "You release your charge, damaging your opponent!"
+	var/charge_effect = "deal an extra attack in damage."
+	var/charge_cost = 2
+	var/charge
+
+/obj/item/ego_weapon/telepole/attack(mob/living/target, mob/living/user)
+	..()
+	var/inrange = 0
+	var/living = list()
+	if(charge < 2)
+		charge += 1
+		return
+	for(var/mob/living/L in livinginrange(3, target))
+		if(L == target || L == user || ishuman(L))
+			continue
+		inrange += 1
+		living += L
+	if(inrange > 0 && charge > 1)
+		var/hit = 0
+		for(var/mob/living/L in living)
+			if(charge < charge_cost || hit > 4)
+				break
+			charge -= charge_cost
+			hit += 1
+			release_charge(L,user)
+	else if(charge<20)
+		charge += 8
+
+/obj/item/ego_weapon/telepole/proc/release_charge(mob/living/target, mob/living/user)
+	to_chat(user, "<span class='notice'>[release_message].</span>")
+	sleep(2)
+	target.apply_damage(force, damtype, null, target.run_armor_check(null, damtype), spread_damage = TRUE)
+	playsound(src, 'sound/abnormalities/thunderbird/tbird_bolt.ogg', 50, TRUE)
+	var/turf/T = get_turf(target)
+	new /obj/effect/temp_visual/justitia_effect(T)
